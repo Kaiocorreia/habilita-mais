@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  CANDIDATE
+  PROFESSIONAL
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  name         String?
+  password     String
+  role         Role          @default(CANDIDATE)
+  createdAt    DateTime      @default(now())
+  professional Professional?
+  appointments Appointment[] @relation("CandidateAppointments")
+  reviews      Review[]      @relation("CandidateReviews")
+}
+
+model Professional {
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique
+  user         User          @relation(fields: [userId], references: [id])
+  bio          String?
+  location     String?
+  pricePerHour Float?
+  categories   String        @default("B")
+  gender       String?
+  isAccessible Boolean       @default(false)
+  isVerified   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+  reviews      Review[]
+}
+
+model Appointment {
+  id             Int               @id @default(autoincrement())
+  candidateId    Int
+  candidate      User              @relation("CandidateAppointments", fields: [candidateId], references: [id])
+  professionalId Int
+  professional   Professional      @relation(fields: [professionalId], references: [id])
+  serviceType    String
+  scheduledAt    DateTime
+  status         AppointmentStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  review         Review?
+}
+
+model Review {
+  id             Int          @id @default(autoincrement())
+  appointmentId  Int          @unique
+  appointment    Appointment  @relation(fields: [appointmentId], references: [id])
+  candidateId    Int
+  candidate      User         @relation("CandidateReviews", fields: [candidateId], references: [id])
+  professionalId Int
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  rating         Int
+  comment        String?
+  createdAt      DateTime     @default(now())
+}
